@@ -12,6 +12,11 @@ import {
 import { PrismaClientExceptionFilter } from 'nestjs-prisma';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
+import {
+  PRISMA_MASTER_CONNECTION,
+  PRISMA_READ_CONNECTION,
+} from './common/prisma/constants';
+import { ExtendedPrismaClient } from './common/prisma/prisma.extension';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -34,6 +39,11 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
+
+  for (const connection of [PRISMA_MASTER_CONNECTION, PRISMA_READ_CONNECTION]) {
+    const prisma: ExtendedPrismaClient = app.get(connection);
+    await prisma.enableShutdownHooks(app);
+  }
 
   await app.listen(3000);
 }

@@ -1,26 +1,25 @@
-import { Logger } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import * as util from 'util';
+import { INestApplication, Logger } from '@nestjs/common';
+import { Prisma, PrismaClient } from '@prisma/client';
 
-export const prismaExtensionFactory = (client: PrismaClient, logger: Logger) =>
-  client.$extends({
-    query: {
-      $allModels: {
-        async $allOperations({ operation, model, args, query }) {
-          const start = performance.now();
-          const result = await query(args);
-          const end = performance.now();
-          const time = end - start;
-          logger.debug(
-            util.inspect(
-              { model, operation, args, time },
-              { showHidden: false, depth: null, colors: true },
-            ),
-          );
-          return result;
-        },
+export const prismaExtensionFactory = (
+  client: PrismaClient<Prisma.PrismaClientOptions, 'query'>,
+  logger: Logger,
+) => {
+  client.$on('query', (e) => {
+    logger.debug(`${e.query} -- ${e.params} duration: ${e.duration}ms`);
+  });
+
+  return client.$extends({
+    client: {
+      async enableShutdownHooks(app: INestApplication) {
+        Prisma.getExtensionContext(client).$on('beforeExit', async () => {
+          logger.log('Gracefully shutdown prisma');
+
+          await app.close();
+        });
       },
     },
   });
+};
 
 export type ExtendedPrismaClient = ReturnType<typeof prismaExtensionFactory>;

@@ -16,7 +16,12 @@ export class PrismaModule {
           useFactory: () => {
             const logger = new Logger(PRISMA_MASTER_CONNECTION);
 
-            return prismaExtensionFactory(new PrismaService(), logger);
+            return prismaExtensionFactory(
+              new PrismaService({
+                log: [{ emit: 'event', level: 'query' }],
+              }),
+              logger,
+            );
           },
         },
         {
@@ -31,6 +36,7 @@ export class PrismaModule {
                     url: configService.get('READ_REPLICATION_DATABASE_URL'),
                   },
                 },
+                log: [{ emit: 'event', level: 'query' }],
               }),
               logger,
             );

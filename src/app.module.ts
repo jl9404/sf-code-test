@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './common/prisma/prisma.module';
-// import { TodosModule } from './todos/todos.module';
+import { TodosModule } from './todos/todos.module';
 import { LoggerModule } from 'nestjs-pino';
 
 @Module({
@@ -17,7 +17,7 @@ import { LoggerModule } from 'nestjs-pino';
       },
     }),
     PrismaModule.forRoot(),
-    // TodosModule,
+    TodosModule,
   ],
   controllers: [AppController],
   providers: [AppService],
