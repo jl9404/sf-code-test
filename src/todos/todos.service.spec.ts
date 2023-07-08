@@ -57,6 +57,88 @@ describe('TodosService', () => {
       expect(todos[0].name).toEqual(fixture[0].name);
       expect(todos[1].name).toEqual(fixture[1].name);
     });
+
+    it('should find with default filter', async () => {
+      prismaReadOnly.todo.findMany = jest.fn().mockResolvedValue(fixture);
+
+      await service.findAll({});
+
+      expect(prismaReadOnly.todo.findMany).toHaveBeenCalledWith({
+        skip: 0,
+        take: 10,
+      });
+    });
+
+    it('should handle filtering & sorting', async () => {
+      prismaReadOnly.todo.findMany = jest.fn().mockResolvedValue(fixture);
+
+      await service.findAll({
+        filter: {
+          name: {
+            $eq: 'todo',
+          },
+          status: {
+            $in: ['NOT_STARTED', 'IN_PROGRESS'],
+          },
+        },
+        sort: [['createdAt', 'DESC']],
+      });
+
+      expect(prismaReadOnly.todo.findMany).toHaveBeenCalledWith({
+        skip: 0,
+        take: 10,
+        where: {
+          name: {
+            equals: 'todo',
+          },
+          status: {
+            in: ['NOT_STARTED', 'IN_PROGRESS'],
+          },
+        },
+        orderBy: [
+          {
+            createdAt: 'desc',
+          },
+        ],
+      });
+    });
+  });
+
+  describe('count', () => {
+    it('should count without params', async () => {
+      prismaReadOnly.todo.count = jest.fn().mockResolvedValue(1);
+
+      const count = await service.count();
+
+      expect(prismaReadOnly.todo.count).toHaveBeenCalled();
+      expect(count).toBe(1);
+    });
+
+    it('should count with filter', async () => {
+      prismaReadOnly.todo.count = jest.fn().mockResolvedValue(1);
+
+      const count = await service.count({
+        page: {
+          on: 2,
+          limit: 1,
+        },
+        sort: [['createdAt', 'DESC']],
+        filter: {
+          name: {
+            $eq: 'todo',
+          },
+        },
+      });
+
+      expect(prismaReadOnly.todo.count).toHaveBeenCalledWith({
+        where: {
+          name: {
+            equals: 'todo',
+          },
+        },
+      });
+      expect(count).toBe(1);
+    });
   });
 
   describe('findOne', () => {

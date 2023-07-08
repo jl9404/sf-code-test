@@ -1,10 +1,6 @@
 import { HttpAdapterHost, NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
-import {
   ClassSerializerInterceptor,
   ValidationPipe,
   VersioningType,
@@ -17,11 +13,16 @@ import {
   PRISMA_READ_CONNECTION,
 } from './common/prisma/constants';
 import { ExtendedPrismaClient } from './common/prisma/prisma.extension';
+import {
+  ResourceObject,
+  SuccessResponse,
+} from '@luxury-presence/nestjs-jsonapi';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestFastifyApplication>(
+  // TODO: enable fastify later?
+  const app = await NestFactory.create(
     AppModule,
-    new FastifyAdapter(),
+    // new FastifyAdapter(),
     { bufferLogs: true },
   );
   app.useLogger(app.get(Logger));
@@ -37,7 +38,10 @@ async function bootstrap() {
     .setTitle('Code Test API Doc')
     .setVersion('v1')
     .build();
-  const document = SwaggerModule.createDocument(app, config);
+
+  const document = SwaggerModule.createDocument(app, config, {
+    extraModels: [SuccessResponse, ResourceObject],
+  });
   SwaggerModule.setup('docs', app, document);
 
   for (const connection of [PRISMA_MASTER_CONNECTION, PRISMA_READ_CONNECTION]) {

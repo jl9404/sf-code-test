@@ -996,6 +996,11 @@
   resolved "https://registry.yarnpkg.com/@lukeed/ms/-/ms-2.0.1.tgz#3c2bbc258affd9cc0e0cc7828477383c73afa6ee"
   integrity sha512-Xs/4RZltsAL7pkvaNStUQt7netTkyxrS0K+RILcVr3TRMS/ToOg4I6uNfhB9SlGsnWBym4U+EaXq0f0cEMNkHA==
 
+"@luxury-presence/nestjs-jsonapi@^1.7.0":
+  version "1.7.0"
+  resolved "https://registry.yarnpkg.com/@luxury-presence/nestjs-jsonapi/-/nestjs-jsonapi-1.7.0.tgz#39defdf319a2678dcd247af8a4d315ef8ace8f1b"
+  integrity sha512-ie/BAqGHbLZjUXSCdzPApoa6Rivq26B47j8JokvUZiowkXXiXCahwnDtfOUqHvJiugJcu9bykUI41vPlJi3kSA==
+
 "@nestjs/cli@^10.0.0":
   version "10.1.4"
   resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-10.1.4.tgz#448b04da315a7a310417fbd8c64eb2f91d4e65ba"

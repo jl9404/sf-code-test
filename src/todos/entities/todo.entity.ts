@@ -1,3 +1,4 @@
+import { ResourceId } from '@luxury-presence/nestjs-jsonapi';
 import { ApiProperty } from '@nestjs/swagger';
 import { Todo, Status } from '@prisma/client';
 import { Exclude } from 'class-transformer';
@@ -8,6 +9,7 @@ export class TodoEntity extends BaseEntity<Todo> implements Todo {
   id: bigint;
 
   @ApiProperty()
+  @ResourceId()
   uuid: string;
 
   @ApiProperty()

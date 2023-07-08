@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { TodosModule } from './todos/todos.module';
 import { LoggerModule } from 'nestjs-pino';
+import { isProd } from './common/constants';
 
 @Module({
   imports: [
@@ -13,7 +14,21 @@ import { LoggerModule } from 'nestjs-pino';
     }),
     LoggerModule.forRoot({
       pinoHttp: {
-        level: 'debug',
+        level: !isProd ? 'debug' : 'info',
+        transport: !isProd
+          ? {
+              target: 'pino-pretty',
+              options: {
+                colorize: true,
+                singleLine: true,
+                levelFirst: false,
+                translateTime: "yyyy-mm-dd'T'HH:MM:ss.l'Z'",
+                messageFormat: '[{context}] {msg}',
+                ignore: 'pid,hostname,context,req,res,responseTime',
+                errorLikeObjectKeys: ['err', 'error'],
+              },
+            }
+          : undefined,
       },
     }),
     PrismaModule.forRoot(),
