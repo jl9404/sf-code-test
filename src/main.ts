@@ -17,6 +17,8 @@ import {
   ResourceObject,
   SuccessResponse,
 } from '@luxury-presence/nestjs-jsonapi';
+import helmet from 'helmet';
+import * as compression from 'compression';
 
 async function bootstrap() {
   // TODO: enable fastify later?
@@ -49,6 +51,9 @@ async function bootstrap() {
     const prisma: ExtendedPrismaClient = app.get(connection);
     await prisma.enableShutdownHooks(app);
   }
+
+  app.use(compression());
+  app.use(helmet());
 
   await app.listen(3000);
 }
