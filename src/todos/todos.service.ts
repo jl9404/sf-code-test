@@ -12,6 +12,10 @@ import { ParsedQuery } from '@luxury-presence/nestjs-jsonapi';
 import { todoParsingConfig } from './constants';
 import { ParsedQueryTransformer } from 'src/common/parsed-query.transformer';
 import { DEFAULT_PAGE_LIMIT } from 'src/common/constants';
+import { UserEntity } from 'src/users/entites/user.entity';
+import { CaslAbilityFactory } from 'src/auth/casl-ability.factory';
+import { accessibleBy } from '@casl/prisma';
+import { Action } from 'src/auth/constants';
 
 @Injectable()
 export class TodosService {
@@ -22,28 +26,23 @@ export class TodosService {
     private readonly prisma: ExtendedPrismaClient,
     @InjectReadOnlyPrisma()
     private readonly readOnlyPrisma: ExtendedPrismaClient,
+    private readonly caslAbilityFactory: CaslAbilityFactory,
   ) {}
 
-  async create(createTodoDto: CreateTodoDto) {
+  async create(user: UserEntity, createTodoDto: CreateTodoDto) {
     return new TodoEntity(
-      await this.prisma.todo.create({ data: createTodoDto }),
+      await this.prisma.todo.create({
+        data: {
+          ...createTodoDto,
+          authorId: user.id,
+        },
+      }),
     );
   }
 
-  async findAll(params?: ParsedQuery<Todo>) {
-    const transformer = new ParsedQueryTransformer<Todo>({
-      ...todoParsingConfig,
-      useHas: ['tags'],
-    });
+  async findAll(user: UserEntity, params?: ParsedQuery<Todo>) {
+    const ability = this.caslAbilityFactory.createForUser(user);
 
-    const todos = await this.readOnlyPrisma.todo.findMany(
-      transformer.transform(params),
-    );
-
-    return todos.map((todo) => new TodoEntity(todo));
-  }
-
-  async count(params?: ParsedQuery<Todo>) {
     const transformer = new ParsedQueryTransformer<Todo>({
       ...todoParsingConfig,
       useHas: ['tags'],
@@ -51,15 +50,35 @@ export class TodosService {
 
     const args = transformer.transform(params);
 
-    delete args.skip;
-    delete args.take;
-    delete args.orderBy;
+    const todos = await this.readOnlyPrisma.todo.findMany({
+      ...args,
+      where: {
+        AND: [accessibleBy(ability, Action.Read).Todo, args.where || {}],
+      },
+    });
 
-    return await this.readOnlyPrisma.todo.count(args);
+    return todos.map((todo) => new TodoEntity(todo));
   }
 
-  async findAllAndCount(params: ParsedQuery<Todo>) {
-    const total = await this.count(params);
+  async count(user: UserEntity, params?: ParsedQuery<Todo>) {
+    const ability = this.caslAbilityFactory.createForUser(user);
+
+    const transformer = new ParsedQueryTransformer<Todo>({
+      ...todoParsingConfig,
+      useHas: ['tags'],
+    });
+
+    const args = transformer.transform(params);
+
+    return await this.readOnlyPrisma.todo.count({
+      where: {
+        AND: [accessibleBy(ability, Action.Read).Todo, args.where || {}],
+      },
+    });
+  }
+
+  async findAllAndCount(user: UserEntity, params: ParsedQuery<Todo>) {
+    const total = await this.count(user, params);
 
     const pagination = {
       page: params.page?.on || 1,
@@ -77,27 +96,45 @@ export class TodosService {
     }
 
     return {
-      todos: await this.findAll(params),
+      todos: await this.findAll(user, params),
       pagination,
     };
   }
 
-  async findOne(uuid: string) {
-    return new TodoEntity(
-      await this.readOnlyPrisma.todo.findUniqueOrThrow({ where: { uuid } }),
-    );
-  }
+  async findOne(user: UserEntity, uuid: string) {
+    const ability = this.caslAbilityFactory.createForUser(user);
 
-  async update(uuid: string, updateTodoDto: UpdateTodoDto) {
     return new TodoEntity(
-      await this.prisma.todo.update({
-        where: { uuid },
-        data: updateTodoDto,
+      await this.readOnlyPrisma.todo.findFirstOrThrow({
+        where: {
+          AND: [accessibleBy(ability, Action.Read).Todo, { uuid }],
+        },
       }),
     );
   }
 
-  async remove(uuid: string) {
-    await this.prisma.todo.delete({ where: { uuid } });
+  async update(user: UserEntity, uuid: string, updateTodoDto: UpdateTodoDto) {
+    const ability = this.caslAbilityFactory.createForUser(user);
+
+    const todo = await this.prisma.todo.update({
+      where: {
+        uuid,
+        AND: [accessibleBy(ability, Action.Update).Todo],
+      },
+      data: updateTodoDto,
+    });
+
+    return new TodoEntity(todo);
+  }
+
+  async remove(user: UserEntity, uuid: string) {
+    const ability = this.caslAbilityFactory.createForUser(user);
+
+    await this.prisma.todo.delete({
+      where: {
+        uuid,
+        AND: [accessibleBy(ability, Action.Delete).Todo],
+      },
+    });
   }
 }

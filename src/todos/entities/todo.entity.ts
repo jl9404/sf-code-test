@@ -8,6 +8,9 @@ export class TodoEntity extends BaseEntity<Todo> implements Todo {
   @Exclude()
   id: bigint;
 
+  @Exclude()
+  authorId: bigint;
+
   @ApiProperty()
   @ResourceId()
   uuid: string;

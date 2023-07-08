@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   ParseUUIDPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { TodosService } from './todos.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
@@ -28,6 +29,11 @@ import {
 } from '@luxury-presence/nestjs-jsonapi';
 import { ApiFilterQuery } from 'src/common/decorators/api-filter-query.decorator';
 import { todoParsingConfig } from './constants';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { UserEntity } from 'src/users/entites/user.entity';
+import { PoliciesGuard } from 'src/auth/policies.guard';
+import { Action } from 'src/auth/constants';
+import { CheckPolicies } from 'src/auth/decorators/check-policies.decorator';
 
 @Controller({
   path: 'todos',
@@ -43,8 +49,15 @@ export class TodosController {
   @ApiCreatedResponse({
     schema: successResponseSchema(TodoEntity),
   })
-  async create(@Body() createTodoDto: CreateTodoDto) {
-    return SuccessResponse.of(await this.todosService.create(createTodoDto));
+  @UseGuards(PoliciesGuard)
+  @CheckPolicies((ability) => ability.can(Action.Create, 'Todo'))
+  async create(
+    @CurrentUser() user: UserEntity,
+    @Body() createTodoDto: CreateTodoDto,
+  ) {
+    return SuccessResponse.of(
+      await this.todosService.create(user, createTodoDto),
+    );
   }
 
   @Get()
@@ -53,7 +66,10 @@ export class TodosController {
     schema: successResponseSchema([TodoEntity]),
   })
   @ApiFilterQuery(todoParsingConfig)
+  @UseGuards(PoliciesGuard)
+  @CheckPolicies((ability) => ability.can(Action.Read, 'Todo'))
   async findAll(
+    @CurrentUser() user: UserEntity,
     // TODO: change it to PipeTransform?
     @ParseJsonApiQuery<Todo>({
       config: todoParsingConfig,
@@ -61,6 +77,7 @@ export class TodosController {
     params: ParsedQuery<Todo>,
   ) {
     const { todos, pagination } = await this.todosService.findAllAndCount(
+      user,
       params,
     );
 
@@ -70,27 +87,40 @@ export class TodosController {
   @Get(':uuid')
   @ApiBearerAuth('auth')
   @ApiOkResponse({ schema: successResponseSchema(TodoEntity) })
-  async findOne(@Param('uuid', ParseUUIDPipe) uuid: string) {
-    return SuccessResponse.of(await this.todosService.findOne(uuid));
+  @UseGuards(PoliciesGuard)
+  @CheckPolicies((ability) => ability.can(Action.Read, 'Todo'))
+  async findOne(
+    @CurrentUser() user: UserEntity,
+    @Param('uuid', ParseUUIDPipe) uuid: string,
+  ) {
+    return SuccessResponse.of(await this.todosService.findOne(user, uuid));
   }
 
   @Patch(':uuid')
   @ApiBearerAuth('auth')
   @ApiOkResponse({ schema: successResponseSchema(TodoEntity) })
+  @UseGuards(PoliciesGuard)
+  @CheckPolicies((ability) => ability.can(Action.Update, 'Todo'))
   async update(
+    @CurrentUser() user: UserEntity,
     @Param('uuid', ParseUUIDPipe) uuid: string,
     @Body() updateTodoDto: UpdateTodoDto,
   ) {
     return SuccessResponse.of(
-      await this.todosService.update(uuid, updateTodoDto),
+      await this.todosService.update(user, uuid, updateTodoDto),
     );
   }
 
   @Delete(':uuid')
   @ApiBearerAuth('auth')
   @ApiOkResponse()
-  async remove(@Param('uuid', ParseUUIDPipe) uuid: string) {
-    await this.todosService.remove(uuid);
+  @UseGuards(PoliciesGuard)
+  @CheckPolicies((ability) => ability.can(Action.Delete, 'Todo'))
+  async remove(
+    @CurrentUser() user: UserEntity,
+    @Param('uuid', ParseUUIDPipe) uuid: string,
+  ) {
+    await this.todosService.remove(user, uuid);
 
     return {};
   }

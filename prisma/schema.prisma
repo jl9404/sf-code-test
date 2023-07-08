@@ -1,14 +1,17 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["extendedWhereUnique"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
 }
 
 model Todo {
   id          BigInt    @id @default(autoincrement()) @db.BigInt
+  authorId    BigInt
   uuid        String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
   description String
@@ -18,6 +21,9 @@ model Todo {
   dueAt       DateTime  @db.Timestamptz
   createdAt   DateTime  @default(now()) @db.Timestamptz
   updatedAt   DateTime? @updatedAt @db.Timestamptz
+  author      User      @relation(fields: [authorId], references: [id])
+
+  @@index([authorId])
 }
 
 model User {
@@ -25,8 +31,10 @@ model User {
   uuid      String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email     String    @unique @db.VarChar
   password  String    @db.VarChar
+  roles     Role[]    @default([USER])
   createdAt DateTime  @default(now()) @db.Timestamptz
   updatedAt DateTime? @updatedAt @db.Timestamptz
+  todos     Todo[]
 }
 
 enum Status {
@@ -41,4 +49,10 @@ enum Priority {
   P2
   P1
   P0
+}
+
+enum Role {
+  ADMIN
+  USER
+  READONLY_USER
 }

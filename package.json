@@ -24,9 +24,12 @@
     "migrate:deploy": "npx prisma migrate deploy",
     "prisma:generate": "npx prisma generate",
     "prisma:studio": "npx prisma studio",
-    "prisma:seed": "npx prisma db seed"
+    "prisma:seed": "npx prisma db seed",
+    "prisma:diff:dev": "prisma migrate diff --to-schema-datamodel=./prisma/schema.prisma --from-url=postgres://postgres:postgres@127.0.0.1:5432/todo_dev --script"
   },
   "dependencies": {
+    "@casl/ability": "^6.5.0",
+    "@casl/prisma": "^1.4.0",
     "@fastify/static": "^6.10.2",
     "@luxury-presence/nestjs-jsonapi": "^1.7.0",
     "@nestjs/common": "^10.0.0",
@@ -91,6 +94,7 @@
     "modulePaths": [
       "<rootDir>"
     ],
+    "modulePathIgnorePatterns": ["<rootDir>/dist/", "<rootDir>/test/", "<rootDir>/prisma/"],
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"

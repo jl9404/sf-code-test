@@ -18,6 +18,7 @@ describe('AuthService', () => {
       '$argon2id$v=19$m=65536,t=3,p=4$5fDPS3Jz0vWWg4aVtirbag$OQlHOJA0doc1PsRB6sp9P0qynSuwUw/rAOVmKrNogsM',
     createdAt: new Date(),
     updatedAt: new Date(),
+    roles: [],
   };
 
   beforeEach(async () => {
