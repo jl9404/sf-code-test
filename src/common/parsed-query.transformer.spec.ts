@@ -10,6 +10,7 @@ describe('ParsedQueryTransformer', () => {
     number2: number;
     number3: number;
     text: string;
+    stringArray: string[];
     createdAt: Date;
   };
 
@@ -21,6 +22,7 @@ describe('ParsedQueryTransformer', () => {
   beforeEach(() => {
     transformer = new ParsedQueryTransformer<Dummy>({
       sortableColumns: ['id', 'createdAt'],
+      useHas: ['stringArray'],
     });
   });
 
@@ -107,6 +109,45 @@ describe('ParsedQueryTransformer', () => {
         },
         text: {
           in: ['a', 'b', 'c'],
+        },
+      },
+    });
+  });
+
+  it('should use has* for array', () => {
+    expect(
+      transformer.transform({
+        ...defaultProps,
+        filter: {
+          stringArray: {
+            $in: ['a', 'b'],
+          },
+        },
+      }),
+    ).toEqual({
+      skip: 0,
+      take: 10,
+      where: {
+        stringArray: {
+          hasEvery: ['a', 'b'],
+        },
+      },
+    });
+    expect(
+      transformer.transform({
+        ...defaultProps,
+        filter: {
+          stringArray: {
+            $eq: 'a',
+          },
+        },
+      }),
+    ).toEqual({
+      skip: 0,
+      take: 10,
+      where: {
+        stringArray: {
+          has: 'a',
         },
       },
     });

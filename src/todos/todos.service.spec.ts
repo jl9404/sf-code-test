@@ -80,6 +80,9 @@ describe('TodosService', () => {
           status: {
             $in: ['NOT_STARTED', 'IN_PROGRESS'],
           },
+          tags: {
+            $eq: 'tag1',
+          },
         },
         sort: [['createdAt', 'DESC']],
       });
@@ -93,6 +96,9 @@ describe('TodosService', () => {
           },
           status: {
             in: ['NOT_STARTED', 'IN_PROGRESS'],
+          },
+          tags: {
+            has: 'tag1',
           },
         },
         orderBy: [
@@ -127,6 +133,9 @@ describe('TodosService', () => {
           name: {
             $eq: 'todo',
           },
+          tags: {
+            $in: ['tag1', 'tag2'],
+          },
         },
       });
 
@@ -134,6 +143,9 @@ describe('TodosService', () => {
         where: {
           name: {
             equals: 'todo',
+          },
+          tags: {
+            hasEvery: ['tag1', 'tag2'],
           },
         },
       });

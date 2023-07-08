@@ -1,11 +1,18 @@
 import { CreateTodoDto } from './create-todo.dto';
-import { Status } from '@prisma/client';
-import { IsEnum, ValidateIf } from 'class-validator';
-import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { Priority, Status } from '@prisma/client';
+import { IsEnum, IsOptional } from 'class-validator';
+import { ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger';
 
-export class UpdateTodoDto extends PartialType(CreateTodoDto) {
+export class UpdateTodoDto extends PartialType(
+  OmitType(CreateTodoDto, ['priority']),
+) {
+  @IsEnum(Priority)
+  @IsOptional()
+  @ApiPropertyOptional({ enum: Priority })
+  priority?: Priority;
+
   @IsEnum(Status)
-  @ValidateIf((dto) => Boolean(dto.status))
+  @IsOptional()
   @ApiPropertyOptional({ enum: Status })
   status?: Status;
 }

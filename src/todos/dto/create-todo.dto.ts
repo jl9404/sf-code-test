@@ -1,6 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Priority } from '@prisma/client';
 import { Type } from 'class-transformer';
-import { IsDate, IsNotEmpty, IsString, MinDate } from 'class-validator';
+import {
+  IsDate,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MinDate,
+} from 'class-validator';
 
 export class CreateTodoDto {
   @IsString()
@@ -12,6 +20,16 @@ export class CreateTodoDto {
   @IsNotEmpty()
   @ApiProperty()
   description: string;
+
+  @IsString({ each: true })
+  @IsOptional()
+  @ApiPropertyOptional({ type: 'string', isArray: true })
+  tags?: string[];
+
+  @IsEnum(Priority)
+  @IsOptional()
+  @ApiPropertyOptional({ enum: Priority })
+  priority?: Priority = Priority.P2;
 
   @MinDate(() => new Date())
   @IsDate()

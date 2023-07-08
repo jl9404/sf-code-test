@@ -13,6 +13,8 @@ model Todo {
   name        String
   description String
   status      Status   @default(NOT_STARTED)
+  priority    Priority @default(P2)
+  tags        String[] @default([])
   dueAt       DateTime @db.Timestamptz
   createdAt   DateTime @default(now()) @db.Timestamptz
   updatedAt   DateTime @updatedAt @db.Timestamptz
@@ -22,4 +24,12 @@ enum Status {
   NOT_STARTED
   IN_PROGRESS
   COMPLETED
+}
+
+enum Priority {
+  P4
+  P3
+  P2
+  P1
+  P0
 }

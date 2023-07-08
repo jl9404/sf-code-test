@@ -15,6 +15,10 @@ export type PrismaFindOptions<T> = {
     | Record<keyof T, 'asc' | 'desc'>[];
 };
 
+export type TransformerConfig<T> = {
+  useHas?: (keyof T)[];
+};
+
 const operatorMapper = {
   [Op.$eq]: 'equals',
   [Op.$in]: 'in',
@@ -22,8 +26,13 @@ const operatorMapper = {
   [Op.$gte]: 'gte',
 };
 
+const operatorHasMapper = {
+  [Op.$eq]: 'has',
+  [Op.$in]: 'hasEvery',
+};
+
 export class ParsedQueryTransformer<T> {
-  constructor(private config: ParsingConfig<T>) {}
+  constructor(private config: ParsingConfig<T> & TransformerConfig<T>) {}
 
   transform(params?: ParsedQuery<T>): PrismaFindOptions<T> {
     if (!params) {
@@ -72,13 +81,19 @@ export class ParsedQueryTransformer<T> {
               switch (operator) {
                 case Op.$eq:
                 case Op.$in:
+                  const mapper = this.config?.useHas?.includes(field as keyof T)
+                    ? operatorHasMapper
+                    : operatorMapper;
+
+                  newCondition = {
+                    [mapper[operator]]: value,
+                  };
+                  break;
                 case Op.$lte:
                 case Op.$gte:
-                  if (operatorMapper[operator]) {
-                    newCondition = {
-                      [operatorMapper[operator]]: value,
-                    };
-                  }
+                  newCondition = {
+                    [operatorMapper[operator]]: value,
+                  };
                   break;
                 case Op.$btw:
                   if (Array.isArray(value)) {

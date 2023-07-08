@@ -31,7 +31,10 @@ export class TodosService {
   }
 
   async findAll(params?: ParsedQuery<Todo>) {
-    const transformer = new ParsedQueryTransformer<Todo>(todoParsingConfig);
+    const transformer = new ParsedQueryTransformer<Todo>({
+      ...todoParsingConfig,
+      useHas: ['tags'],
+    });
 
     const todos = await this.readOnlyPrisma.todo.findMany(
       transformer.transform(params),
@@ -41,7 +44,10 @@ export class TodosService {
   }
 
   async count(params?: ParsedQuery<Todo>) {
-    const transformer = new ParsedQueryTransformer<Todo>(todoParsingConfig);
+    const transformer = new ParsedQueryTransformer<Todo>({
+      ...todoParsingConfig,
+      useHas: ['tags'],
+    });
 
     const args = transformer.transform(params);
 
