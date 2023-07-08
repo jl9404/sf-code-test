@@ -12,6 +12,7 @@ import { TodosService } from './todos.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import {
+  ApiBearerAuth,
   ApiCreatedResponse,
   ApiExtraModels,
   ApiOkResponse,
@@ -38,6 +39,7 @@ export class TodosController {
   constructor(private readonly todosService: TodosService) {}
 
   @Post()
+  @ApiBearerAuth('auth')
   @ApiCreatedResponse({
     schema: successResponseSchema(TodoEntity),
   })
@@ -46,6 +48,7 @@ export class TodosController {
   }
 
   @Get()
+  @ApiBearerAuth('auth')
   @ApiOkResponse({
     schema: successResponseSchema([TodoEntity]),
   })
@@ -65,12 +68,14 @@ export class TodosController {
   }
 
   @Get(':uuid')
+  @ApiBearerAuth('auth')
   @ApiOkResponse({ schema: successResponseSchema(TodoEntity) })
   async findOne(@Param('uuid', ParseUUIDPipe) uuid: string) {
     return SuccessResponse.of(await this.todosService.findOne(uuid));
   }
 
   @Patch(':uuid')
+  @ApiBearerAuth('auth')
   @ApiOkResponse({ schema: successResponseSchema(TodoEntity) })
   async update(
     @Param('uuid', ParseUUIDPipe) uuid: string,
@@ -82,6 +87,7 @@ export class TodosController {
   }
 
   @Delete(':uuid')
+  @ApiBearerAuth('auth')
   @ApiOkResponse()
   async remove(@Param('uuid', ParseUUIDPipe) uuid: string) {
     await this.todosService.remove(uuid);

@@ -6,6 +6,10 @@ import { PrismaModule } from './common/prisma/prisma.module';
 import { TodosModule } from './todos/todos.module';
 import { LoggerModule } from 'nestjs-pino';
 import { isProd } from './common/constants';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -33,8 +37,16 @@ import { isProd } from './common/constants';
     }),
     PrismaModule.forRoot(),
     TodosModule,
+    AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {}

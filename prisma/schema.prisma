@@ -8,16 +8,25 @@ datasource db {
 }
 
 model Todo {
-  id          BigInt   @id @default(autoincrement()) @db.BigInt
-  uuid        String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id          BigInt    @id @default(autoincrement()) @db.BigInt
+  uuid        String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
   description String
-  status      Status   @default(NOT_STARTED)
-  priority    Priority @default(P2)
-  tags        String[] @default([])
-  dueAt       DateTime @db.Timestamptz
-  createdAt   DateTime @default(now()) @db.Timestamptz
-  updatedAt   DateTime @updatedAt @db.Timestamptz
+  status      Status    @default(NOT_STARTED)
+  priority    Priority  @default(P2)
+  tags        String[]  @default([])
+  dueAt       DateTime  @db.Timestamptz
+  createdAt   DateTime  @default(now()) @db.Timestamptz
+  updatedAt   DateTime? @updatedAt @db.Timestamptz
+}
+
+model User {
+  id        BigInt    @id @default(autoincrement()) @db.BigInt
+  uuid      String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String    @unique @db.VarChar
+  password  String    @db.VarChar
+  createdAt DateTime  @default(now()) @db.Timestamptz
+  updatedAt DateTime? @updatedAt @db.Timestamptz
 }
 
 enum Status {

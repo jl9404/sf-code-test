@@ -37,6 +37,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('Code Test API Doc')
     .setVersion('v1')
+    .addBearerAuth({ type: 'http' }, 'auth')
     .build();
 
   const document = SwaggerModule.createDocument(app, config, {
