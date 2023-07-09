@@ -13,6 +13,7 @@
 ```bash
 yarn
 cp .env.example .env
+cp .env.test.example .env.test
 ```
 
 ### Start dependency services
@@ -26,6 +27,7 @@ docker-compose up -d
 ```bash
 PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres
 CREATE DATABASE todo_dev;
+CREATE DATABASE todo_test;
 ```
 
 > NOTE: You can use any database manager to connect the db :)

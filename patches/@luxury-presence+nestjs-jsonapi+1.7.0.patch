@@ -1,0 +1,35 @@
+diff --git a/node_modules/@luxury-presence/nestjs-jsonapi/dist/parsers/filter.parser.js b/node_modules/@luxury-presence/nestjs-jsonapi/dist/parsers/filter.parser.js
+index ef11c08..b1ed676 100644
+--- a/node_modules/@luxury-presence/nestjs-jsonapi/dist/parsers/filter.parser.js
++++ b/node_modules/@luxury-presence/nestjs-jsonapi/dist/parsers/filter.parser.js
+@@ -97,8 +97,19 @@ const isFilterKey = (key) => key.startsWith('filter.');
+ const getFieldName = (key) => key.replace('filter.', '');
+ const fieldHasOperator = (fieldName, operator, filterableColumns) => filterableColumns[fieldName] &&
+     filterableColumns[fieldName].includes(operator);
++const _split = (_str, _sep, _n) => {
++  var _out = [];
++
++  while(_n--) _out.push(_str.slice(_sep.lastIndex, _sep.exec(_str).index));
++
++  _out.push(_str.slice(_sep.lastIndex));
++  return _out;
++}
+ const getOperation = (filter, fieldName, filterableColumns, errors) => {
+-    const [firstExpression, secondExpression, thirdExpression] = filter.split(':');
++    const [firstExpression, secondExpression] = _split(filter, /:/g, 1);
+     const operator = firstExpression;
+     if (!operator) {
+         errors.push(`Invalid operator ${firstExpression} in filter query param`);
+@@ -120,9 +131,9 @@ const getOperation = (filter, fieldName, filterableColumns, errors) => {
+         case types_1.Op.$in:
+             operand = secondExpression.split(',');
+             break;
+-        case types_1.Op.$not:
+-            operand = getOperation(`${secondExpression}:${thirdExpression}`, fieldName, filterableColumns, errors);
+-            break;
++        // case types_1.Op.$not:
++        //     operand = getOperation(`${secondExpression}:${thirdExpression}`, fieldName, filterableColumns, errors);
++        //     break;
+         case types_1.Op.$btw:
+             operand = parseBetween(secondExpression, errors);
+             break;

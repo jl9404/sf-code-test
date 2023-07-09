@@ -17,7 +17,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:e2e": "yarn prisma:db:push:test && yarn jest --config ./test/jest-e2e.json --runInBand",
     "postinstall": "patch-package && husky install",
     "migrate:dev": "npx prisma migrate dev",
     "migrate:dev:create": "npx prisma migrate dev --create-only",
@@ -25,7 +25,8 @@
     "prisma:generate": "npx prisma generate",
     "prisma:studio": "npx prisma studio",
     "prisma:seed": "npx prisma db seed",
-    "prisma:diff:dev": "prisma migrate diff --to-schema-datamodel=./prisma/schema.prisma --from-url=postgres://postgres:postgres@127.0.0.1:5432/todo_dev --script"
+    "prisma:diff:dev": "prisma migrate diff --to-schema-datamodel=./prisma/schema.prisma --from-url=postgres://postgres:postgres@127.0.0.1:5432/todo_dev --script",
+    "prisma:db:push:test": "DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/todo_test yarn prisma db push"
   },
   "dependencies": {
     "@casl/ability": "^6.5.0",
