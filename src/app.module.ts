@@ -13,6 +13,7 @@ import { CACHE_MANAGER, CacheModule } from '@nestjs/cache-manager';
 import { RedisCache, redisStore } from 'cache-manager-ioredis-yet';
 import { parseRedisUrl } from 'parse-redis-url-simple';
 import { TerminusModule } from '@nestjs/terminus';
+import { Request } from 'express';
 
 @Module({
   imports: [
@@ -30,12 +31,19 @@ import { TerminusModule } from '@nestjs/terminus';
                 singleLine: true,
                 levelFirst: false,
                 translateTime: "yyyy-mm-dd'T'HH:MM:ss.l'Z'",
-                messageFormat: '[{context}] {msg}',
-                ignore: 'pid,hostname,context,req,res,responseTime',
+                messageFormat: '[{traceId}, {spanId}] [{context}] {msg}',
+                ignore:
+                  'pid,hostname,context,req,res,responseTime,traceId,spanId',
                 errorLikeObjectKeys: ['err', 'error'],
               },
             }
           : undefined,
+        customProps(req: Request) {
+          return {
+            traceId: req?.b3?.traceId,
+            spanId: req?.b3?.spanId,
+          };
+        },
       },
     }),
     CacheModule.registerAsync({

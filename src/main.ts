@@ -1,3 +1,8 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
+import { getOrCreateOtelSdk } from './tracing/tracing';
+getOrCreateOtelSdk().start();
+
 import { HttpAdapterHost, NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import {
@@ -19,6 +24,7 @@ import {
 } from '@luxury-presence/nestjs-jsonapi';
 import helmet from 'helmet';
 import * as compression from 'compression';
+import { b3Middleware } from './tracing/b3.middleware';
 
 async function bootstrap() {
   // TODO: enable fastify later?
@@ -54,6 +60,7 @@ async function bootstrap() {
 
   app.use(compression());
   app.use(helmet());
+  app.use(b3Middleware);
 
   await app.listen(3000);
 }
