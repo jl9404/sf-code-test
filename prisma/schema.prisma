@@ -27,14 +27,30 @@ model Todo {
 }
 
 model User {
-  id        BigInt    @id @default(autoincrement()) @db.BigInt
-  uuid      String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email     String    @unique @db.VarChar
-  password  String    @db.VarChar
-  roles     Role[]    @default([USER])
-  createdAt DateTime  @default(now()) @db.Timestamptz
-  updatedAt DateTime? @updatedAt @db.Timestamptz
-  todos     Todo[]
+  id         BigInt     @id @default(autoincrement()) @db.BigInt
+  uuid       String     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email      String     @unique @db.VarChar
+  password   String     @db.VarChar
+  roles      Role[]     @default([USER])
+  createdAt  DateTime   @default(now()) @db.Timestamptz
+  updatedAt  DateTime?  @updatedAt @db.Timestamptz
+  todos      Todo[]
+  activities Activity[]
+}
+
+model Activity {
+  id            BigInt    @id @default(autoincrement()) @db.BigInt
+  uuid          String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorId       BigInt
+  model         Model
+  action        Action
+  beforePayload Json?     @default("{}")
+  afterPayload  Json?     @default("{}")
+  createdAt     DateTime  @default(now()) @db.Timestamptz
+  updatedAt     DateTime? @updatedAt @db.Timestamptz
+  actor         User      @relation(fields: [actorId], references: [id])
+
+  @@index([actorId])
 }
 
 enum Status {
@@ -55,4 +71,15 @@ enum Role {
   ADMIN
   USER
   READONLY_USER
+}
+
+enum Model {
+  Todo
+  User
+}
+
+enum Action {
+  CREATE
+  UPDATE
+  DELETE
 }

@@ -14,6 +14,8 @@ import { RedisCache, redisStore } from 'cache-manager-ioredis-yet';
 import { parseRedisUrl } from 'parse-redis-url-simple';
 import { TerminusModule } from '@nestjs/terminus';
 import { Request } from 'express';
+import { ActivitiesModule } from './activities/activities.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -46,6 +48,7 @@ import { Request } from 'express';
         },
       },
     }),
+    EventEmitterModule.forRoot(),
     CacheModule.registerAsync({
       isGlobal: true,
       imports: [ConfigModule],
@@ -63,6 +66,7 @@ import { Request } from 'express';
     TodosModule,
     AuthModule,
     UsersModule,
+    ActivitiesModule,
   ],
   controllers: [AppController],
   providers: [

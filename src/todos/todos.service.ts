@@ -16,6 +16,8 @@ import { UserEntity } from 'src/users/entites/user.entity';
 import { CaslAbilityFactory } from 'src/auth/casl-ability.factory';
 import { accessibleBy } from '@casl/prisma';
 import { Action } from 'src/auth/constants';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { DeltaChangedEvent } from 'src/activities/events/delta-changed.event';
 
 @Injectable()
 export class TodosService {
@@ -27,10 +29,11 @@ export class TodosService {
     @InjectReadOnlyPrisma()
     private readonly readOnlyPrisma: ExtendedPrismaClient,
     private readonly caslAbilityFactory: CaslAbilityFactory,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(user: UserEntity, createTodoDto: CreateTodoDto) {
-    return new TodoEntity(
+    const todo = new TodoEntity(
       await this.prisma.todo.create({
         data: {
           ...createTodoDto,
@@ -38,6 +41,18 @@ export class TodosService {
         },
       }),
     );
+
+    this.eventEmitter.emit(
+      'delta.changed',
+      new DeltaChangedEvent({
+        actorId: user.id,
+        model: 'Todo',
+        action: 'CREATE',
+        afterPayload: todo,
+      }),
+    );
+
+    return todo;
   }
 
   async findAll(user: UserEntity, params?: ParsedQuery<Todo>) {
@@ -116,6 +131,8 @@ export class TodosService {
   async update(user: UserEntity, uuid: string, updateTodoDto: UpdateTodoDto) {
     const ability = this.caslAbilityFactory.createForUser(user);
 
+    const previousTodo = await this.findOne(user, uuid);
+
     const todo = await this.prisma.todo.update({
       where: {
         uuid,
@@ -123,6 +140,17 @@ export class TodosService {
       },
       data: updateTodoDto,
     });
+
+    this.eventEmitter.emit(
+      'delta.changed',
+      new DeltaChangedEvent({
+        actorId: user.id,
+        model: 'Todo',
+        action: 'UPDATE',
+        beforePayload: previousTodo,
+        afterPayload: updateTodoDto,
+      }),
+    );
 
     return new TodoEntity(todo);
   }
@@ -136,5 +164,17 @@ export class TodosService {
         AND: [accessibleBy(ability, Action.Delete).Todo],
       },
     });
+
+    this.eventEmitter.emit(
+      'delta.changed',
+      new DeltaChangedEvent({
+        actorId: user.id,
+        model: 'Todo',
+        action: 'DELETE',
+        beforePayload: {
+          uuid,
+        },
+      }),
+    );
   }
 }

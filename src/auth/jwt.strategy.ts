@@ -6,6 +6,7 @@ import { UsersService } from 'src/users/users.service';
 import { UserEntity } from 'src/users/entites/user.entity';
 import { RedisCache } from 'cache-manager-ioredis-yet';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -34,7 +35,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           new UserEntity(await this.usersService.findOne(payload.sub)),
       );
 
-      return new UserEntity(user);
+      return plainToInstance(UserEntity, user);
     } catch (e) {
       throw new UnauthorizedException();
     }

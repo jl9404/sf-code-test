@@ -1,7 +1,7 @@
 import { AbilityBuilder, PureAbility } from '@casl/ability';
 import { PrismaQuery, Subjects, createPrismaAbility } from '@casl/prisma';
 import { Injectable } from '@nestjs/common';
-import { Todo } from '@prisma/client';
+import { Activity, Todo } from '@prisma/client';
 import { UserEntity } from 'src/users/entites/user.entity';
 import { Action } from './constants';
 
@@ -10,6 +10,7 @@ export type AppAbility = PureAbility<
     string,
     Subjects<{
       Todo: Todo;
+      Activity: Activity;
     }>,
   ],
   PrismaQuery
@@ -19,6 +20,9 @@ export type AppAbility = PureAbility<
 export class CaslAbilityFactory {
   createForUser(user: UserEntity) {
     const { can, build } = new AbilityBuilder<AppAbility>(createPrismaAbility);
+
+    // Everyone can read activity feed
+    can(Action.Read, 'Activity');
 
     // TODO: can be stored on db?
     if (user.roles.includes('READONLY_USER')) {

@@ -31,7 +31,8 @@ export class HttpCacheInterceptor extends CacheInterceptor {
 
         if (response?.data !== null) {
           const firstItem = [response.data].flat().shift();
-          if (!(firstItem instanceof ResourceObject)) {
+
+          if (firstItem && !(firstItem instanceof ResourceObject)) {
             return SuccessResponse.of(
               plainToClass(
                 entity,
@@ -63,8 +64,8 @@ export class HttpCacheInterceptor extends CacheInterceptor {
     const user = request.user as UserEntity;
 
     // TODO: works for express only
-    return `cache:${request.path}:${user ? `${user.id}:` : ''}${objectHash(
-      request.query,
-    )}`;
+    return `cache:${request.method}:${request.path}:${
+      user ? `${user.id}:` : ''
+    }${objectHash(request.query)}`;
   }
 }
