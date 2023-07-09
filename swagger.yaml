@@ -1,0 +1,867 @@
+openapi: 3.0.0
+paths:
+  /health:
+    get:
+      operationId: AppController_health
+      parameters: []
+      responses:
+        '200':
+          description: The Health Check is successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  info:
+                    type: object
+                    example:
+                      database:
+                        status: up
+                    additionalProperties:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                      additionalProperties:
+                        type: string
+                    nullable: true
+                  error:
+                    type: object
+                    example: {}
+                    additionalProperties:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                      additionalProperties:
+                        type: string
+                    nullable: true
+                  details:
+                    type: object
+                    example:
+                      database:
+                        status: up
+                    additionalProperties:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                      additionalProperties:
+                        type: string
+        '503':
+          description: The Health Check is not successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  info:
+                    type: object
+                    example:
+                      database:
+                        status: up
+                    additionalProperties:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                      additionalProperties:
+                        type: string
+                    nullable: true
+                  error:
+                    type: object
+                    example:
+                      redis:
+                        status: down
+                        message: Could not connect
+                    additionalProperties:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                      additionalProperties:
+                        type: string
+                    nullable: true
+                  details:
+                    type: object
+                    example:
+                      database:
+                        status: up
+                      redis:
+                        status: down
+                        message: Could not connect
+                    additionalProperties:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                      additionalProperties:
+                        type: string
+  /v1/todos:
+    post:
+      operationId: TodosController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTodoDto'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/ResourceObject'
+                          - properties:
+                              type:
+                                type: string
+                                enum:
+                                  - TodoEntity
+                                example: TodoEntity
+                              attributes:
+                                $ref: '#/components/schemas/TodoEntity'
+                      meta:
+                        type: object
+                      links:
+                        type: object
+      tags:
+        - todos
+      security:
+        - auth: []
+    get:
+      operationId: TodosController_findAll
+      parameters:
+        - name: filter.status
+          required: false
+          in: query
+          description: 'available operators: `$eq`, `$in`'
+          examples:
+            empty:
+              summary: ' '
+              value: ''
+            $eq:
+              summary: Equal Filter
+              value: $eq:value
+            $btw:
+              summary: Between Filter
+              value: $btw:value1,value2
+            $in:
+              summary: In Filter
+              value: $in:value1,value2
+          schema: {}
+        - name: filter.priority
+          required: false
+          in: query
+          description: 'available operators: `$eq`, `$in`'
+          examples:
+            empty:
+              summary: ' '
+              value: ''
+            $eq:
+              summary: Equal Filter
+              value: $eq:value
+            $btw:
+              summary: Between Filter
+              value: $btw:value1,value2
+            $in:
+              summary: In Filter
+              value: $in:value1,value2
+          schema: {}
+        - name: filter.tags
+          required: false
+          in: query
+          description: 'available operators: `$eq`, `$in`'
+          examples:
+            empty:
+              summary: ' '
+              value: ''
+            $eq:
+              summary: Equal Filter
+              value: $eq:value
+            $btw:
+              summary: Between Filter
+              value: $btw:value1,value2
+            $in:
+              summary: In Filter
+              value: $in:value1,value2
+          schema: {}
+        - name: filter.dueAt
+          required: false
+          in: query
+          description: 'available operators: `$btw`, `$lte`, `$gte`'
+          examples:
+            empty:
+              summary: ' '
+              value: ''
+            $eq:
+              summary: Equal Filter
+              value: $eq:value
+            $btw:
+              summary: Between Filter
+              value: $btw:value1,value2
+            $in:
+              summary: In Filter
+              value: $in:value1,value2
+          schema: {}
+        - name: sort
+          required: false
+          in: query
+          description: 'available fields: `name`, `status`, `dueAt`, `createdAt`, `priority`'
+          examples:
+            empty:
+              summary: ' '
+              value: ''
+            singleAsc:
+              summary: Single Field Sorting (Asc)
+              value: name
+            singleDesc:
+              summary: Single Field Sorting (Desc)
+              value: '-createdAt'
+            combined:
+              summary: Combined Fields Sorting
+              value: '-createdAt,name'
+          schema:
+            type: string
+        - name: page.on
+          required: false
+          in: query
+          example: '1'
+          schema:
+            type: number
+        - name: page.limit
+          required: false
+          in: query
+          example: '10'
+          schema:
+            type: number
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          allOf:
+                            - $ref: '#/components/schemas/ResourceObject'
+                            - properties:
+                                type:
+                                  type: string
+                                  enum:
+                                    - TodoEntity
+                                  example: TodoEntity
+                                attributes:
+                                  $ref: '#/components/schemas/TodoEntity'
+                      meta:
+                        type: object
+                      links:
+                        type: object
+      tags:
+        - todos
+      security:
+        - auth: []
+  /v1/todos/{uuid}:
+    get:
+      operationId: TodosController_findOne
+      parameters:
+        - name: uuid
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/ResourceObject'
+                          - properties:
+                              type:
+                                type: string
+                                enum:
+                                  - TodoEntity
+                                example: TodoEntity
+                              attributes:
+                                $ref: '#/components/schemas/TodoEntity'
+                      meta:
+                        type: object
+                      links:
+                        type: object
+      tags:
+        - todos
+      security:
+        - auth: []
+    patch:
+      operationId: TodosController_update
+      parameters:
+        - name: uuid
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTodoDto'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/ResourceObject'
+                          - properties:
+                              type:
+                                type: string
+                                enum:
+                                  - TodoEntity
+                                example: TodoEntity
+                              attributes:
+                                $ref: '#/components/schemas/TodoEntity'
+                      meta:
+                        type: object
+                      links:
+                        type: object
+      tags:
+        - todos
+      security:
+        - auth: []
+    delete:
+      operationId: TodosController_remove
+      parameters:
+        - name: uuid
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      tags:
+        - todos
+      security:
+        - auth: []
+  /v1/auth/login:
+    post:
+      operationId: AuthController_login
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginDto'
+      responses:
+        '200':
+          description: ''
+      tags:
+        - auth
+  /v1/auth/register:
+    post:
+      operationId: AuthController_register
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDto'
+      responses:
+        '200':
+          description: ''
+      tags:
+        - auth
+  /v1/activities:
+    get:
+      operationId: ActivitiesController_findAll
+      parameters:
+        - name: sort
+          required: false
+          in: query
+          description: 'available fields: `createdAt`'
+          examples:
+            empty:
+              summary: ' '
+              value: ''
+            singleAsc:
+              summary: Single Field Sorting (Asc)
+              value: name
+            singleDesc:
+              summary: Single Field Sorting (Desc)
+              value: '-createdAt'
+            combined:
+              summary: Combined Fields Sorting
+              value: '-createdAt,name'
+          schema:
+            type: string
+        - name: page.on
+          required: false
+          in: query
+          example: '1'
+          schema:
+            type: number
+        - name: page.limit
+          required: false
+          in: query
+          example: '10'
+          schema:
+            type: number
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          allOf:
+                            - $ref: '#/components/schemas/ResourceObject'
+                            - properties:
+                                type:
+                                  type: string
+                                  enum:
+                                    - ActivityEntity
+                                  example: ActivityEntity
+                                attributes:
+                                  $ref: '#/components/schemas/ActivityEntity'
+                      meta:
+                        type: object
+                      links:
+                        type: object
+      tags:
+        - activities
+      security:
+        - auth: []
+info:
+  title: Code Test API Doc
+  description: ''
+  version: v1
+  contact: {}
+tags: []
+servers: []
+components:
+  securitySchemes:
+    auth:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
+  schemas:
+    TodoEntity:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum:
+            - NOT_STARTED
+            - IN_PROGRESS
+            - COMPLETED
+        priority:
+          type: string
+          enum:
+            - P4
+            - P3
+            - P2
+            - P1
+            - P0
+        tags:
+          type: array
+          items:
+            type: string
+        dueAt:
+          format: date-time
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+      required:
+        - uuid
+        - name
+        - description
+        - status
+        - priority
+        - tags
+        - dueAt
+        - createdAt
+        - updatedAt
+    CreateTodoDto:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        priority:
+          type: string
+          enum:
+            - P4
+            - P3
+            - P2
+            - P1
+            - P0
+        dueAt:
+          format: date-time
+          type: string
+      required:
+        - name
+        - description
+        - dueAt
+    UpdateTodoDto:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        dueAt:
+          format: date-time
+          type: string
+        priority:
+          type: string
+          enum:
+            - P4
+            - P3
+            - P2
+            - P1
+            - P0
+        status:
+          type: string
+          enum:
+            - NOT_STARTED
+            - IN_PROGRESS
+            - COMPLETED
+    LoginDto:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+    RegisterDto:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+    UserEntity:
+      type: object
+      properties:
+        uuid:
+          type: string
+        email:
+          type: string
+      required:
+        - uuid
+        - email
+    ActivityEntity:
+      type: object
+      properties:
+        uuid:
+          type: string
+        actor:
+          $ref: '#/components/schemas/UserEntity'
+        model:
+          type: string
+        action:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        updatedAt:
+          type: object
+      required:
+        - uuid
+        - actor
+        - model
+        - action
+        - createdAt
+        - updatedAt
+    LinkObject:
+      type: object
+      properties:
+        href:
+          type: string
+          readOnly: true
+          example: https://example.com/articles/1/comments
+          description: A string containing the link's URL.
+        rel:
+          type: string
+          readOnly: true
+          description: >-
+            A string containing the link relation type. Must be a valid link
+            relation type as defined in [RFC8288].
+        describedby:
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/LinkObject'
+            - type: 'null'
+          readOnly: true
+          description: >-
+            A link to a description document (e.g. OpenAPI or JSON Schema) for
+            the link target.
+        title:
+          type: string
+          readOnly: true
+          description: >-
+            A string which serves as a label for the destination of a link such
+            that it can be used as a human-readable identifier (e.g., a menu
+            entry).
+        type:
+          type: string
+          readOnly: true
+          description: A string indicating the media type of the link's target.
+        hreflang:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          readOnly: true
+          description: >-
+            A string or an array of strings indicating the language(s) of the
+            link's target. An array of strings indicates that the link's target
+            is available in multiple languages. Each string MUST be a valid
+            language tag [RFC5646].
+        meta:
+          type: object
+          readOnly: true
+          description: >-
+            A meta object containing non-standard meta-information about the
+            link.
+      required:
+        - href
+    Links:
+      type: object
+      properties: {}
+    JsonApi:
+      type: object
+      properties:
+        version:
+          type: string
+          readOnly: true
+          example: '1.1'
+          description: The version of the JSON API specification used.
+        ext:
+          items:
+            type: array
+          readOnly: true
+          description: A list of URI strings that identify JSON API extensions.
+          type: array
+        profile:
+          items:
+            type: array
+          readOnly: true
+          description: A list of URI strings that identify JSON API profiles.
+          type: array
+    RelationshipLinks:
+      type: object
+      properties:
+        self:
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/LinkObject'
+            - type: 'null'
+          readOnly: true
+          example: https://example.com/articles/1/relationships/author
+          description: >-
+            A link for the relationship itself (a “relationship link”). This
+            link allows the client to directly manipulate the relationship.
+        related:
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/LinkObject'
+            - type: 'null'
+          readOnly: true
+          example: https://example.com/articles/1/author
+          description: A related resource link
+      required:
+        - self
+    ResourceIdentifierObject:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: '1'
+          description: A unique identifier for this particular resource.
+        type:
+          type: string
+          readOnly: true
+          example: people
+          description: The type of this resource.
+        meta:
+          type: object
+          readOnly: true
+          example:
+            name: Dan
+          description: >-
+            A meta object containing non-standard meta-information about this
+            resource.
+      required:
+        - id
+    RelationshipObject:
+      type: object
+      properties:
+        data:
+          oneOf:
+            - $ref: '#/components/schemas/ResourceIdentifierObject'
+            - type: array
+              items:
+                $ref: '#/components/schemas/ResourceIdentifierObject'
+            - type: 'null'
+          readOnly: true
+          example:
+            id: '1'
+            type: people
+          description: Resources with certain relationship to a parent resource.
+        links:
+          readOnly: true
+          description: A links object containing links related to the resource.
+          allOf:
+            - $ref: '#/components/schemas/RelationshipLinks'
+        meta:
+          type: object
+          readOnly: true
+          example:
+            name: Dan
+          description: >-
+            A meta object containing non-standard meta-information about a
+            resource.
+      required:
+        - data
+    ResourceObject:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          example: '1'
+          description: A unique identifier for this particular resource.
+        type:
+          type: string
+          readOnly: true
+          description: The type of this resource.
+        attributes:
+          type: object
+          readOnly: true
+          description: An attributes object representing some of the resource's data.
+        meta:
+          type: object
+          readOnly: true
+          description: A meta object containing non-standard meta-information.
+        links:
+          readOnly: true
+          description: A linkss object containing links related to the resource.
+          allOf:
+            - $ref: '#/components/schemas/Links'
+        relationships:
+          readOnly: true
+          description: >-
+            A relationships object containing relationships related to the
+            resource.
+          allOf:
+            - $ref: '#/components/schemas/RelationshipObject'
+      required:
+        - id
+        - type
+    SuccessResponse:
+      type: object
+      properties:
+        meta:
+          type: object
+          readOnly: true
+          description: A meta object containing non-standard meta-information.
+        links:
+          readOnly: true
+          description: A links object containing links related to the primary data.
+          allOf:
+            - $ref: '#/components/schemas/Links'
+        jsonapi:
+          readOnly: true
+          example:
+            version: '1.1'
+          description: An object describing the server's implementation.
+          allOf:
+            - $ref: '#/components/schemas/JsonApi'
+        included:
+          readOnly: true
+          description: >-
+            An array of resource objects that are related to the primary data
+            and/or each other.
+          items:
+            type: array
+          type: array
+        data:
+          oneOf:
+            - $ref: '#/components/schemas/ResourceObject'
+            - type: array
+              items:
+                $ref: '#/components/schemas/ResourceObject'
+            - type: 'null'
+          readOnly: true
+          description: The document's "primary data".
+      required:
+        - meta
+        - data

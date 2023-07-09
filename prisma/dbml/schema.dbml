@@ -1,0 +1,78 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table Todo {
+  id BigInt [pk, increment]
+  authorId BigInt [not null]
+  uuid String [unique, not null]
+  name String [not null]
+  description String [not null]
+  status Status [not null, default: 'NOT_STARTED']
+  priority Priority [not null, default: 'P2']
+  tags String[] [not null]
+  dueAt DateTime [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime
+  author User [not null]
+}
+
+Table User {
+  id BigInt [pk, increment]
+  uuid String [unique, not null]
+  email String [unique, not null]
+  password String [not null]
+  roles Role[] [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime
+  todos Todo [not null]
+  activities Activity [not null]
+}
+
+Table Activity {
+  id BigInt [pk, increment]
+  uuid String [unique, not null]
+  actorId BigInt [not null]
+  model Model [not null]
+  action Action [not null]
+  beforePayload Json [default: '{}']
+  afterPayload Json [default: '{}']
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime
+  actor User [not null]
+}
+
+Enum Status {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+Enum Priority {
+  P4
+  P3
+  P2
+  P1
+  P0
+}
+
+Enum Role {
+  ADMIN
+  USER
+  READONLY_USER
+}
+
+Enum Model {
+  Todo
+  User
+}
+
+Enum Action {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+Ref: Todo.authorId > User.id
+
+Ref: Activity.actorId > User.id

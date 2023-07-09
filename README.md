@@ -1,73 +1,380 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Todo
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Prerequisite
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+- [Node v18.15.0](https://github.com/nvm-sh/nvm#installing-and-updating)
+- [docker-compose](https://www.docker.com/products/docker-desktop/)
 
-## Description
+## Setup local environment
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-## Installation
+### Install dependencies
 
 ```bash
-$ yarn install
+yarn
+cp .env.example .env
 ```
 
-## Running the app
+### Start dependency services
 
 ```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
+docker-compose up -d
 ```
 
-## Test
+### Create database
 
 ```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres
+CREATE DATABASE todo_dev;
 ```
 
-## Support
+> NOTE: You can use any database manager to connect the db :)
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### Migrate database
 
-## Stay in touch
+```bash
+yarn prisma migrate dev
+```
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Start app
 
-## License
+```bash
+yarn start:dev
+```
 
-Nest is [MIT licensed](LICENSE).
+Now you can go http://localhost:3000/docs to play around
+
+**Default Credentials**
+
+```
+email                password         role   
+admin@example.com    examplepassword  Admin
+user@example.com     examplepassword  User
+ro-user@example.com  examplepassword  Readonly User
+```
+
+## Technical document
+
+### Database design
+
+![DBML](prisma/dbml/dbml.png)
+
+### System design
+
+![AWS](docs/systemDesign.png)
+
+### Features
+
+- Authentication & Authorization
+- API versioning
+- Todo CRUD with Redis Caching
+- Activity Feed
+- Swagger DOC
+- Opentelemetry tracing
+- Healthcheck endpoint
+- Security headers
+- Logging
+
+#### Authentication & Authorization
+
+Exposed two endpoints `/v1/login` & `/v1/register` for login and register purpose, it returns jwt for bearer token. 
+claim based authorization is applied to user based on user's roles:
+
+```js
+// Everyone can read activity feed
+can(Action.Read, 'Activity');
+
+if (user.roles.includes('READONLY_USER')) {
+  can(Action.Read, 'Todo');
+}
+
+if (user.roles.includes('USER')) {
+  can(Action.Create, 'Todo');
+  can(Action.Read, 'Todo');
+  can(Action.Update, 'Todo', { authorId: user.id }); // User can only edit their own todo
+  can(Action.Delete, 'Todo', { authorId: user.id });
+}
+
+if (user.roles.includes('ADMIN')) {
+  can(Action.Create, 'Todo');
+  can(Action.Read, 'Todo');
+  can(Action.Update, 'Todo');
+  can(Action.Delete, 'Todo');
+}
+```
+
+Follow up action:
+- [ ] Enforce stricter password policy
+- [ ] Apply rate-limiting to these two endpoints
+
+#### API versioning
+
+API Versioning is enabled for the ease of introduce v2 api, right now all resource endpoints are prefixed with `/v1`
+
+#### Todo CRUD with Redis Caching
+
+Basic CRUD endpoints with fluent api for filtering and sorting.
+Considering `status`, `priority` and `tags` that it can be search by multiple values.
+And for datetime column like `dueAt` that it can be range search.
+
+Redis Caching is enabled for get endpoints: `/v1/todos` and `/v1/todos/:uuid` for performance optimization
+
+Follow up action:
+- [ ] Better swagger doc
+
+#### Activity Feed
+
+Currently, js event emitter is used for emitting `DeltaChangedEvent` and `DeltaChangedListener` will listen for the event and insert records to database. RabbitMQ is recommended to use for a larger scale application
+
+```js
+this.eventEmitter.emit(
+  'delta.changed',
+  new DeltaChangedEvent({
+    actorId: user.id,
+    model: 'Todo',
+    action: 'CREATE',
+    afterPayload: todo,
+  }),
+);
+```
+
+Follow up action:
+- [ ] Use message queue instead (eg: RabbitMQ)
+
+#### Swagger DOC
+
+Swagger doc is provided via http://localhost:3000/docs
+
+#### Opentelemetry tracing
+
+Opentelemetry tracing is enabled in this application. With tracing enabled, we can found performance issue easily.
+`http` (http request), `express` (http server), `nest` (app), `prisma` (db), `ioredis` instrumentation is enabled.
+Also, b3 propagator is configured for passing `traceId` and `spanId` from upstream to downstream. 
+
+Jaeger UI: http://localhost:16686/
+
+Follow up action:
+- [ ] Use elastic search + kibana?
+
+#### Healthcheck endpoint
+
+Healthcheck endpoint is implement for monitoring purpose. Dependency services are monitored too.
+
+```json
+{
+  "status": "ok",
+  "info": {
+    "masterDb": {
+      "status": "up"
+    },
+    "readOnlyDb": {
+      "status": "up"
+    },
+    "redis": {
+      "status": "up"
+    }
+  },
+  "error": {
+    
+  },
+  "details": {
+    "masterDb": {
+      "status": "up"
+    },
+    "readOnlyDb": {
+      "status": "up"
+    },
+    "redis": {
+      "status": "up"
+    }
+  }
+}
+```
+
+#### Security headers
+
+Security headers like `Content-Security-Policy`, `Strict-Transport-Security`, `X-Frame-Options` are implemented via `helmet` package.
+
+#### Logging
+
+Pino logger is used for logging. In development mode, pretty print is enabled for better DX.
+
+### API Document
+
+> Note: Swagger UI is always better
+
+# Code Test API Doc
+
+
+## Version: v1
+
+
+### /health
+
+#### GET
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | The Health Check is successful |
+| 503 | The Health Check is not successful |
+
+### /v1/todos
+
+#### POST
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 201 |  |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| auth | |
+
+#### GET
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| filter.status | query | available operators: `$eq`, `$in` | No |  |
+| filter.priority | query | available operators: `$eq`, `$in` | No |  |
+| filter.tags | query | available operators: `$eq`, `$in` | No |  |
+| filter.dueAt | query | available operators: `$btw`, `$lte`, `$gte` | No |  |
+| sort | query | available fields: `name`, `status`, `dueAt`, `createdAt`, `priority` | No | string |
+| page.on | query |  | No | number |
+| page.limit | query |  | No | number |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 |  |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| auth | |
+
+### /v1/todos/{uuid}
+
+#### GET
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| uuid | path |  | Yes | string |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 |  |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| auth | |
+
+#### PATCH
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| uuid | path |  | Yes | string |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 |  |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| auth | |
+
+#### DELETE
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| uuid | path |  | Yes | string |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 |  |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| auth | |
+
+### /v1/auth/login
+
+#### POST
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 |  |
+
+### /v1/auth/register
+
+#### POST
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 |  |
+
+### /v1/activities
+
+#### GET
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| sort | query | available fields: `createdAt` | No | string |
+| page.on | query |  | No | number |
+| page.limit | query |  | No | number |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 |  |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| auth | |
