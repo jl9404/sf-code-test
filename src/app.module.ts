@@ -1,6 +1,5 @@
 import { Inject, Logger, Module, OnModuleDestroy } from '@nestjs/common';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { TodosModule } from './todos/todos.module';
@@ -13,6 +12,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { CACHE_MANAGER, CacheModule } from '@nestjs/cache-manager';
 import { RedisCache, redisStore } from 'cache-manager-ioredis-yet';
 import { parseRedisUrl } from 'parse-redis-url-simple';
+import { TerminusModule } from '@nestjs/terminus';
 
 @Module({
   imports: [
@@ -51,13 +51,13 @@ import { parseRedisUrl } from 'parse-redis-url-simple';
       inject: [ConfigService],
     }),
     PrismaModule.forRoot(),
+    TerminusModule,
     TodosModule,
     AuthModule,
     UsersModule,
   ],
   controllers: [AppController],
   providers: [
-    AppService,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
