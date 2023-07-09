@@ -8,6 +8,7 @@ import {
   Delete,
   ParseUUIDPipe,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { TodosService } from './todos.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
@@ -34,6 +35,8 @@ import { UserEntity } from 'src/users/entites/user.entity';
 import { PoliciesGuard } from 'src/auth/policies.guard';
 import { Action } from 'src/auth/constants';
 import { CheckPolicies } from 'src/auth/decorators/check-policies.decorator';
+import { HttpCacheInterceptor } from 'src/common/interceptors/http-cache.interceptor';
+import { CacheResource } from 'src/auth/decorators/cache-resource.decorator';
 
 @Controller({
   path: 'todos',
@@ -41,6 +44,8 @@ import { CheckPolicies } from 'src/auth/decorators/check-policies.decorator';
 })
 @ApiTags('todos')
 @ApiExtraModels(TodoEntity)
+@UseInterceptors(HttpCacheInterceptor)
+@CacheResource(TodoEntity)
 export class TodosController {
   constructor(private readonly todosService: TodosService) {}
 
