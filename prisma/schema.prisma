@@ -1,6 +1,7 @@
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["extendedWhereUnique", "tracing"]
+  engineType      = "binary"
 }
 
 generator dbml {
